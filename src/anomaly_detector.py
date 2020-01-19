@@ -47,8 +47,8 @@ def prepare_multivariate_data(dataset, target, start_index, end_index, history_s
 x_train, y_train = prepare_multivariate_data(dataset, dataset[:, 1], 0, train_num, 24)
 x_val, y_val = prepare_multivariate_data(dataset, dataset[:, 1], train_num, None, 24)
 
-batch_size = 128
-buffer_size = 5000
+batch_size = 256
+buffer_size = 10000
 
 train_data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_data = train_data.cache().shuffle(buffer_size).batch(batch_size).repeat()
@@ -62,8 +62,27 @@ model.add(tf.keras.layers.LSTM(32,input_shape=x_train[0].shape))
 model.add(tf.keras.layers.Dense(1))
 model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss='mae')
 
-single_step_history = model.fit(train_data, epochs=10,
-                                            steps_per_epoch=500,
+history = model.fit(train_data, epochs=10,
+                                            steps_per_epoch=250,
                                             validation_data=val_data,
-                                            validation_steps=100)
+                                            validation_steps=50)
+
+# Plot the history
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs = range(len(loss))
+plt.figure()
+plt.plot(epochs, loss, 'g', label='Training loss')
+plt.plot(epochs, val_loss, 'r', label='Validation loss')
+plt.title("Training and Validation Loss")
+plt.legend()
+plt.show()
+
+model.save("../data/saved_model/RNN_model")
+
+for x, y in val_data.take:
+    for i in range(0,256):
+        prediction = model.predict(x)
+        print(len(prediction),prediction[0])
+        print(len(y),y[0])
 
